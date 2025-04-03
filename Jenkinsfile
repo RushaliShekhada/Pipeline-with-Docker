@@ -4,6 +4,9 @@ pipeline {
         DOCKER_IMAGE = 'rushali252/java-app:latest'
         SONARQUBE_SERVER = 'SonarQube'
     }
+    tools {
+        maven 'maven'  // The Maven tool configured in Jenkins
+    }
     stages {
         stage('Checkout Code') {
             steps {
@@ -37,7 +40,7 @@ pipeline {
                 unstash 'built-artifacts'
                 sh 'java -version'
                 sh 'mvn -v'
-                sh 'mvn surefire:test -DskipCompile'
+                sh 'mvn test'
             }
         }
 
