@@ -5,15 +5,18 @@ pipeline {
         SONARQUBE_SERVER = 'SonarQube'
     }
     tools {
-        maven 'maven'  // The Maven tool configured in Jenkins
+        maven 'maven'  // Ensure the Maven tool is configured in Jenkins with the name 'maven'
     }
     stages {
+
+        // Checkout the code from GitHub
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/RushaliShekhada/Pipeline-with-Docker.git'
             }
         }
 
+        // Build the Java application using Java 17
         stage('Build with Java 17') {
             agent {
                 docker {
@@ -29,6 +32,7 @@ pipeline {
             }
         }
 
+        // Run unit tests using Java 11
         stage('Test with Java 11') {
             agent {
                 docker {
@@ -40,10 +44,11 @@ pipeline {
                 unstash 'built-artifacts'
                 sh 'java -version'
                 sh 'mvn -v'
-                sh 'mvn test'
+                sh 'mvn surefire:test -DskipTests=false'
             }
         }
 
+        // SonarQube analysis using Java 8
         stage('SonarQube Analysis Using Java 8') {
             agent {
                 docker {
@@ -59,22 +64,24 @@ pipeline {
                     withSonarQubeEnv("${SONARQUBE_SERVER}") {
                         sh """
                         mvn clean verify sonar:sonar \
-                        -Dsonar.projectKey=java-app \
-                        -Dsonar.host.url=http://sonar:9000 \
-                        -Dsonar.login=${SONAR_TOKEN} \
-                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                            -Dsonar.projectKey=java-app \
+                            -Dsonar.host.url=http://sonar:9000 \
+                            -Dsonar.login=${SONAR_TOKEN} \
+                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                         """
                     }
                 }
             }
         }
 
+        // Build Docker image
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
 
+        // Push Docker image to Docker Hub
         stage('Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
@@ -86,6 +93,7 @@ pipeline {
             }
         }
 
+        // Deploy to Kubernetes
         stage('Deploy to Kubernetes') {
             steps {
                 sh 'kubectl apply -f deployment.yaml'
