@@ -2,46 +2,90 @@ pipeline {
     agent any
     environment {
         DOCKER_IMAGE = 'rushali252/java-app:latest'
+        SONARQUBE_SERVER = 'SonarQube'
     }
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                git 'https://github.com/RushaliShekhada/Pipeline-with-Docker.git'
+                git branch: 'main', url: 'https://github.com/RushaliShekhada/Pipeline-with-Docker.git'
             }
         }
-        stage('Build') {
+
+        stage('Build with Java 17') {
+            agent {
+                docker {
+                    image 'maven:3.9.4-eclipse-temurin-17'
+                    args '--network ci_network -v /root/.m2:/root/.m2'
+                }
+            }
             steps {
-                script {
-                    docker.image('openjdk:17-jdk').inside {
-                        sh 'mvn clean package'
+                sh 'java -version'
+                sh 'mvn -v'
+                sh 'mvn clean package'
+                stash name: 'built-artifacts', includes: 'target/**/*'
+            }
+        }
+
+        stage('Test with Java 11') {
+            agent {
+                docker {
+                    image 'maven:3.8.8-eclipse-temurin-11'
+                    args '--network ci_network -v /root/.m2:/root/.m2'
+                }
+            }
+            steps {
+                unstash 'built-artifacts'
+                sh 'java -version'
+                sh 'mvn -v'
+                sh 'mvn surefire:test -DskipCompile'
+            }
+        }
+
+        stage('SonarQube Analysis Using Java 8') {
+            agent {
+                docker {
+                    image 'maven:3.8.6-jdk-8'
+                    args '--network ci_network -v /root/.m2:/root/.m2'
+                }
+            }
+            steps {
+                unstash 'built-artifacts'
+                sh 'java -version'
+                sh 'mvn -v'
+                withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
+                    withSonarQubeEnv("${SONARQUBE_SERVER}") {
+                        sh """
+                        mvn clean verify sonar:sonar \
+                        -Dsonar.projectKey=java-app \
+                        -Dsonar.host.url=http://sonar:9000 \
+                        -Dsonar.login=${SONAR_TOKEN} \
+                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                        """
                     }
                 }
             }
         }
-        stage('Test') {
+
+        stage('Build Docker Image') {
             steps {
-                script {
-                    docker.image('openjdk:11-jdk').inside {
-                        sh 'mvn test'
-                    }
+                sh 'docker build -t $DOCKER_IMAGE .'
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    docker push $DOCKER_IMAGE
+                    """
                 }
             }
         }
-        stage('Docker Build & Push') {
+
+        stage('Deploy to Kubernetes') {
             steps {
-                script {
-                    docker.build("${DOCKER_IMAGE}")
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                        docker.image("${DOCKER_IMAGE}").push()
-                    }
-                }
-            }
-        }
-        stage('Deploy') {
-            steps {
-                script {
-                    sh 'docker run -d -p 8080:8080 --network ci_network ${DOCKER_IMAGE}'
-                }
+                sh 'kubectl apply -f deployment.yaml'
             }
         }
     }
