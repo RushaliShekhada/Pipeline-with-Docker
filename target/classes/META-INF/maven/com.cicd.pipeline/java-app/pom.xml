@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" 
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  
+
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.cicd.pipeline</groupId>
   <artifactId>java-app</artifactId>
@@ -44,15 +44,16 @@
         <configuration>
           <source>${maven.compiler.source}</source>
           <target>${maven.compiler.target}</target>
-          <release>${maven.compiler.target}</release>
         </configuration>
       </plugin>
 
+      <!-- SonarQube Scanner Plugin -->
       <plugin>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <version>3.9.1.2184</version>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>3.9.1.2184</version>
       </plugin>
+
       <!-- Maven JAR Plugin to add Main-Class attribute -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -78,7 +79,6 @@
           </includes>
           <forkCount>1</forkCount>
           <reuseForks>true</reuseForks>
-          <argLine>--enable-preview</argLine>
         </configuration>
       </plugin>
     </plugins>
