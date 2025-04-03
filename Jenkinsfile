@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         DOCKER_IMAGE = 'rushali252/java-app:latest'
-        SONARQUBE_SERVER = 'SonarQube'
+        SONARQUBE_SERVER = 'sonarqube'
     }
     tools {
         maven 'maven'  // Ensure the Maven tool is configured in Jenkins with the name 'maven'
