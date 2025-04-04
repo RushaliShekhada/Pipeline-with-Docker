@@ -61,7 +61,7 @@ pipeline {
                 sh 'java -version'
                 sh 'mvn -v'
                 withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv("${SONARQUBE_SERVER}") {
+                    withSonarQubeEnv('SonarQube') {
                         sh """
                         mvn clean verify sonar:sonar \
                             -Dsonar.projectKey=java-app \
