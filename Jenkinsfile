@@ -93,7 +93,7 @@ mvn clean verify sonar:sonar -Dsonar.projectKey=java-app -Dsonar.host.url=http:/
         // Deploy to Kubernetes
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f /var/jenkins_home/workspace/Pipeline-Docker-Java-App@2/deployment.yaml'
             }
         }
     }
