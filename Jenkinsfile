@@ -62,13 +62,13 @@ pipeline {
                 sh 'mvn -v'
                 withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('SonarQube') {
-                        sh """
+                        sh '''
                         mvn clean verify sonar:sonar \
                             -Dsonar.projectKey=java-app \
                             -Dsonar.host.url=http://sonar:9000                                                       
-                            -Dsonar.login=${SONAR_TOKEN} \
+                            -Dsonar.login=$SONAR_TOKEN \
                             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                        """
+                        '''
                     }
                 }
             }
